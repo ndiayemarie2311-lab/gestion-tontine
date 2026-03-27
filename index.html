@@ -208,18 +208,15 @@ tr:hover td{background:#fafaf8;}
 <body>
 <div id="app-screen" style="display:none;width:100%;">
 
-<!-- MOBILE TOPBAR -->
 <div class="mobile-topbar">
   <div class="mobile-topbar-logo">Gestion<span>Tontine</span></div>
   <button class="hamburger" onclick="openDrawer()">&#9776;</button>
 </div>
 
-<!-- DRAWER OVERLAY -->
 <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
 
-<!-- DRAWER (sidebar mobile) -->
 <div class="drawer" id="drawer">
-  <div class="sidebar-logo">Gestion<span>Tontine</span><small>v2.0 — Multi-tontines</small></div>
+  <div class="sidebar-logo">Gestion<span>Tontine</span><small>v2.0</small></div>
   <div class="tontines-section">
     <div class="tontines-label">Mes tontines</div>
     <div id="drawer-tontines-list"></div>
@@ -237,7 +234,7 @@ tr:hover td{background:#fafaf8;}
   <div class="sidebar-footer">
     <div style="padding:8px 10px;margin-bottom:6px;background:rgba(255,255,255,0.08);border-radius:8px;display:flex;align-items:center;gap:8px;">
       <div style="flex:1;font-size:13px;font-weight:500;color:#fff;" id="drawer-user-display">—</div>
-      <button onclick="doLogout()" style="background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.8);cursor:pointer;border-radius:6px;padding:5px 8px;font-size:12px;font-family:'DM Sans',sans-serif;">Exit</button>
+      <button onclick="doLogout()" style="background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.8);cursor:pointer;border-radius:6px;padding:5px 8px;font-size:12px;">Exit</button>
     </div>
     <div class="save-indicator"><div class="save-dot"></div><span>Données sauvegardées</span></div>
   </div>
@@ -1244,6 +1241,27 @@ window.addEventListener('load',()=>{
 </script>
 
 <!-- MOBILE BOTTOM NAV -->
+<div class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mnav-btn active" id="mnav-dashboard" onclick="showPage('dashboard',this);syncMobileNav('dashboard')">
+      <span class="mnav-icon">&#9635;</span>Accueil
+    </button>
+    <button class="mnav-btn" id="mnav-membres" onclick="showPage('membres',this);syncMobileNav('membres')">
+      <span class="mnav-icon">&#128101;</span>Membres
+    </button>
+    <button class="mnav-btn" id="mnav-cotisations" onclick="showPage('cotisations',this);syncMobileNav('cotisations')">
+      <span class="mnav-icon">&#128181;</span>Cotisations
+    </button>
+    <button class="mnav-btn" id="mnav-dettes" onclick="showPage('dettes',this);syncMobileNav('dettes')">
+      <span class="mnav-icon">&#9888;</span>Dettes
+      <div class="mnav-dot" id="mnav-dot-dettes" style="display:none;"></div>
+    </button>
+    <button class="mnav-btn" id="mnav-notifications" onclick="showPage('notifications',this);syncMobileNav('notifications')">
+      <span class="mnav-icon">&#128276;</span>Notifs
+      <div class="mnav-dot" id="mnav-dot-notifs" style="display:none;"></div>
+    </button>
+  </div>
+</div>
 <div class="mobile-nav">
   <div class="mobile-nav-inner">
     <button class="mnav-btn active" id="mnav-dashboard" onclick="showPage('dashboard',this);syncMobileNav('dashboard')">
