@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>GestionTontine</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --vert:#1a5c3a;--vert-mid:#2e7d52;--vert-clair:#e8f5ee;
@@ -1263,57 +1264,98 @@ function updateMobileBadges(){
   if(dn) dn.style.display = nc>0?'block':'none';
 }
 
-// ===== AUTH =====
-const AUTH_KEY='gt_auth_user';
-function getAuthUser(){try{return JSON.parse(localStorage.getItem(AUTH_KEY));}catch(e){return null;}}
-function saveAuthUser(u){localStorage.setItem(AUTH_KEY,JSON.stringify(u));}
-function clearAuthUser(){localStorage.removeItem(AUTH_KEY);}
+// ===== SUPABASE AUTH =====
+const SUPA_URL = 'https://peiiuojrgsrewbkjhxdj.supabase.co';
+const SUPA_KEY = 'sb_publishable_HstG1HtdJnHtMpR3EH-pQA_hlVbjxrl';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
 function showAuth(){document.getElementById('auth-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
 function showApp(){document.getElementById('auth-screen').style.display='none';document.getElementById('app-screen').style.display='block';}
+
+function showAuthError(msg){
+  const e=document.getElementById('auth-error');
+  e.textContent=msg;e.style.display='block';
+}
+function hideAuthError(){
+  const e=document.getElementById('auth-error');
+  e.textContent='';e.style.display='none';
+}
+
 function switchAuthTab(tab){
   document.getElementById('tab-login').classList.toggle('auth-tab-active',tab==='login');
   document.getElementById('tab-register').classList.toggle('auth-tab-active',tab==='register');
   document.getElementById('form-login').style.display=tab==='login'?'flex':'none';
   document.getElementById('form-register').style.display=tab==='register'?'flex':'none';
-  document.getElementById('auth-error').textContent='';
-  document.getElementById('auth-error').style.display='none';
+  hideAuthError();
 }
-function showAuthError(msg){
-  const e=document.getElementById('auth-error');
-  e.textContent=msg;e.style.display='block';
+
+function setAuthLoading(btn, loading){
+  btn.disabled = loading;
+  btn.style.opacity = loading ? '0.6' : '1';
+  btn.textContent = loading ? 'Chargement...' : btn.dataset.label;
 }
-function doLogin(){
+
+async function doLogin(){
   const email=document.getElementById('login-email').value.trim();
   const pwd=document.getElementById('login-pwd').value;
   if(!email||!pwd){showAuthError('Veuillez remplir tous les champs.');return;}
-  let users=[];try{users=JSON.parse(localStorage.getItem('gt_users')||'[]');}catch(e){}
-  const user=users.find(u=>u.email===email&&u.pwd===pwd);
-  if(!user){showAuthError('Email ou mot de passe incorrect.');return;}
-  saveAuthUser(user);bootApp(user);
+  hideAuthError();
+  const btn=document.querySelector('#form-login button[onclick="doLogin()"]');
+  if(btn){btn.dataset.label=btn.textContent;setAuthLoading(btn,true);}
+  const {data,error}=await supa.auth.signInWithPassword({email,password:pwd});
+  if(btn) setAuthLoading(btn,false);
+  if(error){
+    const msg = error.message.includes('Invalid login')||error.message.includes('invalid_credentials')
+      ? 'Email ou mot de passe incorrect.'
+      : error.message;
+    showAuthError(msg);return;
+  }
+  const meta=data.user.user_metadata||{};
+  bootApp({id:data.user.id, email:data.user.email, prenom:meta.prenom||'', nom:meta.nom||''});
 }
-function doRegister(){
+
+async function doRegister(){
   const prenom=document.getElementById('reg-prenom').value.trim();
   const nom=document.getElementById('reg-nom').value.trim();
   const email=document.getElementById('reg-email').value.trim();
   const pwd=document.getElementById('reg-pwd').value;
   if(!prenom||!nom||!email||!pwd){showAuthError('Tous les champs sont obligatoires.');return;}
   if(pwd.length<6){showAuthError('Mot de passe : minimum 6 caracteres.');return;}
-  let users=[];try{users=JSON.parse(localStorage.getItem('gt_users')||'[]');}catch(e){}
-  if(users.find(u=>u.email===email)){showAuthError('Cet email est deja utilise.');return;}
-  const newUser={id:'u'+Date.now(),prenom,nom,email,pwd,role:'tresorier'};
-  users.push(newUser);localStorage.setItem('gt_users',JSON.stringify(users));
-  saveAuthUser(newUser);bootApp(newUser);
+  hideAuthError();
+  const btn=document.querySelector('#form-register button[onclick="doRegister()"]');
+  if(btn){btn.dataset.label=btn.textContent;setAuthLoading(btn,true);}
+  const {data,error}=await supa.auth.signUp({
+    email, password:pwd,
+    options:{data:{prenom,nom}}
+  });
+  if(btn) setAuthLoading(btn,false);
+  if(error){showAuthError(error.message);return;}
+  if(data.user && data.user.identities && data.user.identities.length===0){
+    showAuthError('Cet email est deja utilise.');return;
+  }
+  // Connexion directe après inscription (si confirmation email désactivée)
+  if(data.session){
+    bootApp({id:data.user.id, email:data.user.email, prenom, nom});
+  } else {
+    showAuthError('✅ Compte créé ! Vérifiez votre email pour confirmer.');
+    switchAuthTab('login');
+  }
 }
-function doLogout(){
-  clearAuthUser();showAuth();
-  document.getElementById('auth-error').style.display='none';
+
+async function doLogout(){
+  await supa.auth.signOut();
+  showAuth();
+  hideAuthError();
 }
+
 function bootApp(user){
-  document.getElementById('user-display').textContent=user.prenom+' '+user.nom;
+  const prenom = user.prenom || user.email.split('@')[0];
+  const nom = user.nom || '';
+  document.getElementById('user-display').textContent=(prenom+' '+nom).trim();
   const av=document.getElementById('user-avatar');
-  if(av) av.textContent=(user.prenom[0]||'')+(user.nom[0]||'');
+  if(av) av.textContent=(prenom[0]||'').toUpperCase()+(nom[0]||'').toUpperCase();
   const du=document.getElementById('drawer-user-display');
-  if(du) du.textContent=user.prenom+' '+user.nom;
+  if(du) du.textContent=(prenom+' '+nom).trim();
   showApp();
   const loaded=charger();
   if(!loaded||!state.tontines.length) initDemoData();
@@ -1325,10 +1367,18 @@ function bootApp(user){
   updateMobileBadges();
 }
 
-window.addEventListener('load',()=>{
-  const user=getAuthUser();
-  if(user){bootApp(user);}
-  else{showAuth();}
+window.addEventListener('load', async ()=>{
+  const {data:{session}} = await supa.auth.getSession();
+  if(session && session.user){
+    const meta = session.user.user_metadata||{};
+    bootApp({id:session.user.id, email:session.user.email, prenom:meta.prenom||'', nom:meta.nom||''});
+  } else {
+    showAuth();
+  }
+  // Écouter les changements de session
+  supa.auth.onAuthStateChange((event, session)=>{
+    if(event==='SIGNED_OUT') showAuth();
+  });
 });
 </script>
 </body>
