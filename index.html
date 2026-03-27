@@ -166,10 +166,40 @@ tr:hover td{background:#fafaf8;}
 .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
 .sh-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;}
 
+/* ---- BOTTOM NAV MOBILE ---- */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--blanc);border-top:1px solid var(--gris2);z-index:90;height:62px;}
+.mobile-nav-inner{display:flex;height:100%;}
+.mnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;color:var(--texte2);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;transition:color .15s;padding:0;position:relative;}
+.mnav-btn.active{color:var(--vert);}
+.mnav-icon{font-size:20px;line-height:1;}
+.mnav-dot{position:absolute;top:8px;right:calc(50% - 16px);width:7px;height:7px;border-radius:50%;background:var(--rouge);border:2px solid var(--blanc);}
+.mobile-topbar{display:none;background:var(--vert);padding:14px 16px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:80;}
+.mobile-topbar-logo{font-family:'Fraunces',serif;font-size:20px;color:#fff;font-weight:700;letter-spacing:-0.5px;}
+.mobile-topbar-logo span{color:#ffd77a;}
+.hamburger{background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:8px;padding:7px 11px;cursor:pointer;font-size:18px;line-height:1;}
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;}
+.drawer-overlay.open{display:block;}
+.drawer{position:fixed;top:0;left:-260px;width:250px;height:100vh;background:var(--vert);z-index:210;transition:left .28s ease;overflow-y:auto;display:flex;flex-direction:column;}
+.drawer.open{left:0;}
+
 @media(max-width:680px){
   .sidebar{display:none;}
-  .grid2,.grid3,.grid4{grid-template-columns:1fr 1fr;}
+  .mobile-nav{display:block;}
+  .mobile-topbar{display:flex;}
+  .grid2{grid-template-columns:1fr;}
+  .grid3,.grid4{grid-template-columns:1fr 1fr;}
   .frow{grid-template-columns:1fr;}
+  .main{padding:14px 14px 80px;}
+  .content{padding:14px 14px 80px;}
+  .overlay .modal{width:95%;padding:18px;}
+  .th-banner{padding:16px;}
+  .th-banner-name{font-size:18px;}
+  .th-banner-stats{gap:14px;}
+  .topbar{display:none;}
+  table{font-size:12px;}
+  th,td{padding:8px 8px;}
+  .sh-title{font-size:16px;}
+  .stats-row{grid-template-columns:1fr 1fr;}
 }
 
 .auth-tab-active { background:#fff !important; color:#1a5c3a !important; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
@@ -177,7 +207,44 @@ tr:hover td{background:#fafaf8;}
 </style>
 </head>
 <body>
-<div id="app-screen" style="display:none;width:100%;"><div class="layout">
+<div id="app-screen" style="display:none;width:100%;">
+
+<!-- MOBILE TOPBAR -->
+<div class="mobile-topbar">
+  <div class="mobile-topbar-logo">Gestion<span>Tontine</span></div>
+  <button class="hamburger" onclick="openDrawer()">&#9776;</button>
+</div>
+
+<!-- DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+
+<!-- DRAWER (sidebar mobile) -->
+<div class="drawer" id="drawer">
+  <div class="sidebar-logo">Gestion<span>Tontine</span><small>v2.0 — Multi-tontines</small></div>
+  <div class="tontines-section">
+    <div class="tontines-label">Mes tontines</div>
+    <div id="drawer-tontines-list"></div>
+    <button class="btn-new-tontine" onclick="openModal('modal-new-tontine');closeDrawer()">+ Nouvelle tontine</button>
+  </div>
+  <nav class="nav-menu">
+    <button class="nav-item" onclick="showPage('dashboard',this);closeDrawer()">&#9635; Tableau de bord</button>
+    <button class="nav-item" onclick="showPage('membres',this);closeDrawer()">&#128101; Membres</button>
+    <button class="nav-item" onclick="showPage('cotisations',this);closeDrawer()">&#128181; Cotisations</button>
+    <button class="nav-item" onclick="showPage('dettes',this);closeDrawer()">&#9888; Dettes</button>
+    <button class="nav-item" onclick="showPage('notifications',this);closeDrawer()">&#128276; Notifications</button>
+    <button class="nav-item" onclick="showPage('tours',this);closeDrawer()">&#8635; Tours</button>
+    <button class="nav-item" onclick="showPage('rapports',this);closeDrawer()">&#128202; Rapports</button>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="padding:8px 10px;margin-bottom:6px;background:rgba(255,255,255,0.08);border-radius:8px;display:flex;align-items:center;gap:8px;">
+      <div style="flex:1;font-size:13px;font-weight:500;color:#fff;" id="drawer-user-display">—</div>
+      <button onclick="doLogout()" style="background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.8);cursor:pointer;border-radius:6px;padding:5px 8px;font-size:12px;font-family:'DM Sans',sans-serif;">Exit</button>
+    </div>
+    <div class="save-indicator"><div class="save-dot"></div><span>Données sauvegardées</span></div>
+  </div>
+</div>
+
+<div class="layout">
 
 <!-- ===== SIDEBAR ===== -->
 <aside class="sidebar">
@@ -896,6 +963,7 @@ function updateBadges(){
   bdD.style.display = dettesCount?'inline':'none';
   dot.style.display = nonLus?'block':'none';
   renderNotifPanel();
+  updateMobileBadges();
 }
 
 function renderNotifPanel(){
@@ -1056,6 +1124,41 @@ function toast(msg, type=''){
   setTimeout(()=>t.classList.remove('show'),2800);
 }
 
+// ===================== MOBILE =====================
+function openDrawer(){
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+  renderDrawerTontines();
+}
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+function renderDrawerTontines(){
+  const list = document.getElementById('drawer-tontines-list');
+  if(!list) return;
+  list.innerHTML = state.tontines.map(t=>`
+    <div class="tontine-item ${t.id===state.activeTontineId?'active':''}" onclick="switchTontine('${t.id}');closeDrawer()">
+      <div class="tontine-dot" style="background:${t.couleur||'#1a5c3a'};"></div>
+      <div class="tontine-name">${t.nom}</div>
+      <span class="tontine-count">${t.membres.length}</span>
+    </div>`).join('');
+}
+function syncMobileNav(id){
+  document.querySelectorAll('.mnav-btn').forEach(b=>b.classList.remove('active'));
+  const btn = document.getElementById('mnav-'+id);
+  if(btn) btn.classList.add('active');
+}
+function updateMobileBadges(){
+  const T2 = state.tontines.find(t=>t.id===state.activeTontineId);
+  const dettesCount = T2 ? T2.dettes.filter(d=>d.montant-d.rembourse>0).length : 0;
+  const notifsCount = state.notifications.filter(n=>!n.lu).length;
+  const dotD = document.getElementById('mnav-dot-dettes');
+  const dotN = document.getElementById('mnav-dot-notifs');
+  if(dotD) dotD.style.display = dettesCount>0?'block':'none';
+  if(dotN) dotN.style.display = notifsCount>0?'block':'none';
+}
+
 // ===================== AUTH =====================
 const AUTH_KEY = 'gt_auth_user';
 
@@ -1119,6 +1222,8 @@ function doLogout(){
 function bootApp(user){
   // Afficher nom dans la topbar
   document.getElementById('user-display').textContent = user.prenom + ' ' + user.nom;
+  const drawerUser = document.getElementById('drawer-user-display');
+  if(drawerUser) drawerUser.textContent = user.prenom + ' ' + user.nom;
   const av = document.getElementById('user-avatar');
   if(av) av.textContent = (user.prenom[0]||'') + (user.nom[0]||'');
   showApp();
@@ -1139,6 +1244,28 @@ window.addEventListener('load',()=>{
 });
 </script>
 
+<!-- MOBILE BOTTOM NAV -->
+<div class="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mnav-btn active" id="mnav-dashboard" onclick="showPage('dashboard',this);syncMobileNav('dashboard')">
+      <span class="mnav-icon">&#9635;</span>Accueil
+    </button>
+    <button class="mnav-btn" id="mnav-membres" onclick="showPage('membres',this);syncMobileNav('membres')">
+      <span class="mnav-icon">&#128101;</span>Membres
+    </button>
+    <button class="mnav-btn" id="mnav-cotisations" onclick="showPage('cotisations',this);syncMobileNav('cotisations')">
+      <span class="mnav-icon">&#128181;</span>Cotisations
+    </button>
+    <button class="mnav-btn" id="mnav-dettes" onclick="showPage('dettes',this);syncMobileNav('dettes')">
+      <span class="mnav-icon">&#9888;</span>Dettes
+      <div class="mnav-dot" id="mnav-dot-dettes" style="display:none;"></div>
+    </button>
+    <button class="mnav-btn" id="mnav-notifications" onclick="showPage('notifications',this);syncMobileNav('notifications')">
+      <span class="mnav-icon">&#128276;</span>Notifs
+      <div class="mnav-dot" id="mnav-dot-notifs" style="display:none;"></div>
+    </button>
+  </div>
+</div>
 </div><!-- /app-screen -->
 
 <!-- ===== AUTH SCREEN ===== -->
