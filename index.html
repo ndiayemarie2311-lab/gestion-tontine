@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>GestionTontine </title>
+<title>GestionTontine v2</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -171,10 +171,13 @@ tr:hover td{background:#fafaf8;}
   .grid2,.grid3,.grid4{grid-template-columns:1fr 1fr;}
   .frow{grid-template-columns:1fr;}
 }
+
+.auth-tab-active { background:#fff !important; color:#1a5c3a !important; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+#auth-error:not(:empty){ display:block !important; padding:10px 14px; }
 </style>
 </head>
 <body>
-<div class="layout">
+<div id="app-screen" style="display:none;width:100%;"><div class="layout">
 
 <!-- ===== SIDEBAR ===== -->
 <aside class="sidebar">
@@ -220,9 +223,14 @@ tr:hover td{background:#fafaf8;}
   </nav>
 
   <div class="sidebar-footer">
+    <div style="padding:8px 10px;margin-bottom:6px;background:rgba(255,255,255,0.08);border-radius:8px;display:flex;align-items:center;gap:8px;">
+      <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0;" id="user-avatar">GT</div>
+      <div style="flex:1;overflow:hidden;"><div style="font-size:12px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="user-display">Utilisateur</div><div style="font-size:10px;color:rgba(255,255,255,0.5);">Tresorier</div></div>
+      <button onclick="doLogout()" title="Deconnexion" style="background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.8);cursor:pointer;border-radius:6px;padding:5px 8px;font-size:12px;font-family:DM Sans,sans-serif;">Exit</button>
+    </div>
     <div class="save-indicator">
       <div class="save-dot"></div>
-      <span id="save-status">Données sauvegardées</span>
+      <span id="save-status">Donnees sauvegardees</span>
     </div>
   </div>
 </aside>
@@ -1048,8 +1056,72 @@ function toast(msg, type=''){
   setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-// ===================== INIT =====================
-window.addEventListener('load',()=>{
+// ===================== AUTH =====================
+const AUTH_KEY = 'gt_auth_user';
+
+function getAuthUser(){ try{ return JSON.parse(localStorage.getItem(AUTH_KEY)); }catch(e){ return null; } }
+function saveAuthUser(u){ localStorage.setItem(AUTH_KEY, JSON.stringify(u)); }
+function clearAuthUser(){ localStorage.removeItem(AUTH_KEY); }
+
+function showAuth(){ document.getElementById('auth-screen').style.display='flex'; document.getElementById('app-screen').style.display='none'; }
+function showApp(){ document.getElementById('auth-screen').style.display='none'; document.getElementById('app-screen').style.display='flex'; }
+
+function switchAuthTab(tab){
+  document.getElementById('tab-login').classList.toggle('auth-tab-active', tab==='login');
+  document.getElementById('tab-register').classList.toggle('auth-tab-active', tab==='register');
+  document.getElementById('form-login').style.display = tab==='login'?'flex':'none';
+  document.getElementById('form-register').style.display = tab==='register'?'flex':'none';
+  document.getElementById('auth-error').textContent='';
+}
+
+function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pwd = document.getElementById('login-pwd').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.textContent='';
+  if(!email||!pwd){ errEl.textContent='Veuillez remplir tous les champs.'; return; }
+  // Chercher l'utilisateur dans localStorage
+  let users = [];
+  try{ users = JSON.parse(localStorage.getItem('gt_users')||'[]'); }catch(e){}
+  const user = users.find(u=>u.email===email && u.pwd===pwd);
+  if(!user){ errEl.textContent='Email ou mot de passe incorrect.'; return; }
+  saveAuthUser(user);
+  bootApp(user);
+}
+
+function doRegister(){
+  const prenom = document.getElementById('reg-prenom').value.trim();
+  const nom = document.getElementById('reg-nom').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pwd = document.getElementById('reg-pwd').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.textContent='';
+  if(!prenom||!nom||!email||!pwd){ errEl.textContent='Tous les champs sont obligatoires.'; return; }
+  if(pwd.length<6){ errEl.textContent='Mot de passe : minimum 6 caractères.'; return; }
+  let users = [];
+  try{ users = JSON.parse(localStorage.getItem('gt_users')||'[]'); }catch(e){}
+  if(users.find(u=>u.email===email)){ errEl.textContent='Cet email est déjà utilisé.'; return; }
+  const newUser = { id:'u'+Date.now(), prenom, nom, email, pwd, role:'tresorier', createdAt: new Date().toISOString() };
+  users.push(newUser);
+  localStorage.setItem('gt_users', JSON.stringify(users));
+  saveAuthUser(newUser);
+  bootApp(newUser);
+}
+
+function doLogout(){
+  clearAuthUser();
+  showAuth();
+  document.getElementById('auth-error').textContent='';
+  document.getElementById('login-email').value='';
+  document.getElementById('login-pwd').value='';
+}
+
+function bootApp(user){
+  // Afficher nom dans la topbar
+  document.getElementById('user-display').textContent = user.prenom + ' ' + user.nom;
+  const av = document.getElementById('user-avatar');
+  if(av) av.textContent = (user.prenom[0]||'') + (user.nom[0]||'');
+  showApp();
   const loaded = charger();
   if(!loaded || !state.tontines.length) initDemoData();
   if(state.tontines.length && !state.activeTontineId) state.activeTontineId = state.tontines[0].id;
@@ -1057,7 +1129,60 @@ window.addEventListener('load',()=>{
   renderTontinesList();
   renderDashboard();
   updateBadges();
+}
+
+// ===================== INIT =====================
+window.addEventListener('load',()=>{
+  const user = getAuthUser();
+  if(user){ bootApp(user); }
+  else { showAuth(); }
 });
 </script>
+
+</div><!-- /app-screen -->
+
+<!-- ===== AUTH SCREEN ===== -->
+<div id="auth-screen" style="display:none;position:fixed;inset:0;z-index:1000;font-family:'DM Sans',sans-serif;">
+  <div style="flex:1;background:#1a5c3a;display:flex;align-items:center;justify-content:center;padding:48px;flex-direction:column;">
+    <div style="font-family:'Fraunces',serif;font-size:36px;color:#fff;font-weight:700;letter-spacing:-1px;margin-bottom:10px;">Gestion<span style="color:#ffd77a;">Tontine</span></div>
+    <p style="color:rgba(255,255,255,0.75);font-size:15px;max-width:320px;text-align:center;line-height:1.7;margin-bottom:36px;">La plateforme numérique des tontines sénégalaises</p>
+    <div style="display:flex;flex-direction:column;gap:14px;width:100%;max-width:280px;">
+      <div style="display:flex;align-items:center;gap:12px;color:rgba(255,255,255,0.85);font-size:14px;"><div style="width:8px;height:8px;border-radius:50%;background:#ffd77a;flex-shrink:0;"></div>Suivi des cotisations en temps réel</div>
+      <div style="display:flex;align-items:center;gap:12px;color:rgba(255,255,255,0.85);font-size:14px;"><div style="width:8px;height:8px;border-radius:50%;background:#ffd77a;flex-shrink:0;"></div>Gestion des dettes et remboursements</div>
+      <div style="display:flex;align-items:center;gap:12px;color:rgba(255,255,255,0.85);font-size:14px;"><div style="width:8px;height:8px;border-radius:50%;background:#ffd77a;flex-shrink:0;"></div>Multi-tontines et notifications</div>
+      <div style="display:flex;align-items:center;gap:12px;color:rgba(255,255,255,0.85);font-size:14px;"><div style="width:8px;height:8px;border-radius:50%;background:#ffd77a;flex-shrink:0;"></div>Sauvegarde automatique des données</div>
+    </div>
+  </div>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#f5f4f0;padding:32px;">
+    <div style="background:#fff;border-radius:16px;padding:32px 36px;width:100%;max-width:400px;border:1px solid #ece9e0;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+      <div style="display:flex;background:#f5f4f0;border-radius:10px;padding:4px;margin-bottom:24px;gap:4px;">
+        <button id="tab-login" class="auth-tab-active" onclick="switchAuthTab('login')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;">Connexion</button>
+        <button id="tab-register" onclick="switchAuthTab('register')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;background:transparent;color:#6b6860;">Inscription</button>
+      </div>
+      <div id="auth-error" style="color:#c0392b;font-size:13px;margin-bottom:12px;min-height:18px;background:#fdecea;border-radius:8px;padding:0;display:none;"></div>
+
+      <!-- LOGIN -->
+      <div id="form-login" style="display:flex;flex-direction:column;gap:12px;">
+        <div><label style="display:block;font-size:12px;font-weight:500;color:#6b6860;margin-bottom:5px;">Email</label><input id="login-email" type="email" placeholder="vous@email.com" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid #ece9e0;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;"/></div>
+        <div><label style="display:block;font-size:12px;font-weight:500;color:#6b6860;margin-bottom:5px;">Mot de passe</label><input id="login-pwd" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;padding:10px 13px;border-radius:8px;border:1px solid #ece9e0;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;"/></div>
+        <button onclick="doLogin()" style="padding:12px;background:#1a5c3a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">Se connecter</button>
+        <div style="text-align:center;font-size:12px;color:#aaa;">Pas encore de compte ? <button onclick="switchAuthTab('register')" style="background:none;border:none;color:#1a5c3a;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500;">Créer un compte</button></div>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="form-register" style="display:none;flex-direction:column;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label style="display:block;font-size:12px;font-weight:500;color:#6b6860;margin-bottom:5px;">Prénom</label><input id="reg-prenom" placeholder="Fatou" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid #ece9e0;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;"/></div>
+          <div><label style="display:block;font-size:12px;font-weight:500;color:#6b6860;margin-bottom:5px;">Nom</label><input id="reg-nom" placeholder="Ndiaye" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid #ece9e0;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;"/></div>
+        </div>
+        <div><label style="display:block;font-size:12px;font-weight:500;color:#6b6860;margin-bottom:5px;">Email</label><input id="reg-email" type="email" placeholder="vous@email.com" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid #ece9e0;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;"/></div>
+        <div><label style="display:block;font-size:12px;font-weight:500;color:#6b6860;margin-bottom:5px;">Mot de passe</label><input id="reg-pwd" type="password" placeholder="Minimum 6 caractères" style="width:100%;padding:9px 11px;border-radius:8px;border:1px solid #ece9e0;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;"/></div>
+        <button onclick="doRegister()" style="padding:12px;background:#1a5c3a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;">Créer mon compte</button>
+        <div style="text-align:center;font-size:12px;color:#aaa;">Déjà un compte ? <button onclick="switchAuthTab('login')" style="background:none;border:none;color:#1a5c3a;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500;">Se connecter</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
