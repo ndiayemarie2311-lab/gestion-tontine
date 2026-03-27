@@ -165,25 +165,90 @@ tr:hover td{background:#fafaf8;}
 #auth-error:not(:empty){display:block !important;padding:10px 14px;}
 
 @media(max-width:768px){
+  /* Layout */
   .sidebar{display:none;}
   .topbar{display:none;}
   .mobile-topbar{display:flex;}
   .mobile-nav{display:block;}
-  .main{padding-bottom:70px;}
-  .content{padding:14px 14px 80px;}
+  .layout{flex-direction:column;}
+  .main{padding-bottom:70px;width:100%;overflow-x:hidden;}
+  .content{padding:12px 12px 80px;max-width:100%;}
+
+  /* Grids */
   .grid2{grid-template-columns:1fr !important;}
   .grid3{grid-template-columns:1fr 1fr;}
   .grid4{grid-template-columns:1fr 1fr;}
   .frow{grid-template-columns:1fr;}
-  .overlay .modal{width:96%;padding:18px;margin:0 2%;}
-  .th-banner{padding:16px;}
-  .th-banner-name{font-size:18px;}
-  .th-banner-stats{gap:14px;}
-  .sh-title{font-size:16px;}
-  table{font-size:12px;}
-  th,td{padding:8px 8px;}
-  .toast{bottom:70px;right:12px;left:12px;text-align:center;}
-  .notif-panel{right:8px;left:8px;width:auto;}
+
+  /* Cards */
+  .card{padding:14px 14px;}
+  .stat{padding:12px 14px;}
+  .stat-val{font-size:20px;}
+
+  /* Banner tontine */
+  .th-banner{padding:14px 16px;}
+  .th-banner-name{font-size:17px;}
+  .th-banner-stats{gap:12px;flex-wrap:wrap;}
+  .ths-val{font-size:15px;}
+
+  /* Tableaux : scroll horizontal */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{font-size:12px;min-width:480px;}
+  th,td{padding:8px 8px;white-space:nowrap;}
+
+  /* Titres */
+  .sh{flex-wrap:wrap;gap:8px;}
+  .sh-title{font-size:15px;}
+  .card-title{font-size:14px;}
+
+  /* Modal */
+  .overlay{padding:0;align-items:flex-end;}
+  .overlay .modal{
+    width:100%;
+    max-width:100%;
+    margin:0;
+    border-radius:var(--r) var(--r) 0 0;
+    max-height:92vh;
+    padding:20px 16px;
+  }
+  .modal-footer{flex-wrap:wrap;}
+  .modal-footer .btn{flex:1;text-align:center;}
+
+  /* Boutons */
+  .btn{padding:9px 14px;font-size:13px;}
+  .topbar-actions{gap:6px;}
+
+  /* Notifications */
+  .toast{bottom:70px;right:8px;left:8px;text-align:center;font-size:12px;}
+  .notif-panel{right:8px;left:8px;width:auto;top:56px;}
+
+  /* Page dettes */
+  .dette-item{flex-wrap:wrap;gap:8px;}
+  .dette-item .btn{width:100%;margin-top:4px;}
+
+  /* Filtres cotisations */
+  #f-mois,#f-statut{width:100%;box-sizing:border-box;}
+
+  /* Auth screen */
+  #auth-screen{flex-direction:column !important;}
+  #auth-screen > div:first-child{
+    flex:none !important;
+    padding:28px 20px 20px !important;
+    min-height:auto !important;
+  }
+  #auth-screen > div:first-child > div:last-child{display:none !important;}
+  #auth-screen > div:first-child > p{
+    margin-bottom:0 !important;
+    font-size:13px !important;
+  }
+  #auth-screen > div:last-child{
+    flex:1 !important;
+    padding:16px !important;
+    overflow-y:auto;
+  }
+  #auth-screen > div:last-child > div{
+    padding:20px 18px !important;
+  }
 }
 </style>
 </head>
